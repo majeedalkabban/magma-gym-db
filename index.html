@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magma Gym - Finance Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        magma: {
+                            red: '#FF3B30',
+                            orange: '#FF9500',
+                            dark: '#121212',
+                            card: '#1E1E1E',
+                            border: '#2A2A2A',
+                            accent: '#2C2C2E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-card { background: white !important; border: 1px solid #ccc !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="bg-magma-dark text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Auth View -->
+    <div id="authContainer" class="fixed inset-0 bg-magma-dark z-50 flex items-center justify-center p-4">
+        <div class="bg-magma-card border border-magma-border rounded-xl p-8 max-w-md w-full shadow-2xl">
+            <div class="text-center mb-6">
+                <i class="fa-solid fa-fire-flame-curved text-magma-red text-5xl mb-2"></i>
+                <h1 class="text-2xl font-bold tracking-wide">MAGMA GYM</h1>
+                <p class="text-xs text-gray-400">Finance & Revenue Management</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Password</label>
+                    <input type="password" id="loginPassword" value="" placeholder="Enter password" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red" required>
+                </div>
+                <button type="submit" class="w-full bg-magma-red hover:bg-red-600 font-bold py-3 rounded-lg transition duration-200">Login to System</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <header class="bg-magma-card border-b border-magma-border sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-fire-flame-curved text-magma-red text-2xl"></i>
+                <span class="font-bold text-xl tracking-wider hidden sm:inline">MAGMA GYM</span>
+            </div>
+            
+            <nav class="flex space-x-1 sm:space-x-2">
+                <button onclick="switchTab('dashboard')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-magma-accent active-tab" id="tab-dashboard"><i class="fa-solid fa-chart-pie mr-1 sm:mr-2"></i>Dashboard</button>
+                <button onclick="switchTab('entry')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-magma-accent" id="tab-entry"><i class="fa-solid fa-plus-circle mr-1 sm:mr-2"></i>New Entry</button>
+                <button onclick="switchTab('reports')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-magma-accent" id="tab-reports"><i class="fa-solid fa-file-invoice-dollar mr-1 sm:mr-2"></i>Reports</button>
+                <button id="adminSettingsBtn" onclick="switchTab('settings')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-magma-accent"><i class="fa-solid fa-sliders mr-1 sm:mr-2"></i>Settings</button>
+            </nav>
+
+            <div class="flex items-center space-x-3">
+                <span id="userBadge" class="text-xs bg-magma-accent px-2.5 py-1 rounded-full text-magma-orange border border-magma-border">Admin</span>
+                <button onclick="logout()" class="text-gray-400 hover:text-white" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- DASHBOARD TAB -->
+        <section id="view-dashboard" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-magma-card border border-magma-border rounded-xl p-5 print-card">
+                    <div class="flex justify-between items-center text-gray-400 mb-2">
+                        <span class="text-sm">Total Income</span>
+                        <i class="fa-solid fa-arrow-trend-up text-green-500"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-green-500" id="dashTotalIncome">0 IQD</div>
+                    <div class="text-xs text-gray-500 mt-1">Gross revenue recorded</div>
+                </div>
+                <div class="bg-magma-card border border-magma-border rounded-xl p-5 print-card">
+                    <div class="flex justify-between items-center text-gray-400 mb-2">
+                        <span class="text-sm">Total Expenses</span>
+                        <i class="fa-solid fa-arrow-trend-down text-magma-red"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-magma-red" id="dashTotalExpenses">0 IQD</div>
+                    <div class="text-xs text-gray-500 mt-1">Includes operational & payout expenses</div>
+                </div>
+                <div class="bg-magma-card border border-magma-border rounded-xl p-5 print-card">
+                    <div class="flex justify-between items-center text-gray-400 mb-2">
+                        <span class="text-sm">Net Profit</span>
+                        <i class="fa-solid fa-wallet text-magma-orange"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-magma-orange" id="dashNetProfit">0 IQD</div>
+                    <div class="text-xs text-gray-500 mt-1">Income minus Expenses</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-magma-card border border-magma-border rounded-xl p-5">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-200">Revenue Breakdown</h3>
+                    <div class="relative h-64">
+                        <canvas id="incomeChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-magma-card border border-magma-border rounded-xl p-5">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-200">Expense Distribution</h3>
+                    <div class="relative h-64">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-magma-card border border-magma-border rounded-xl p-5">
+                <h3 class="text-lg font-semibold mb-4 text-gray-200">Recent Transactions</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-magma-accent text-gray-400">
+                            <tr>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Type</th>
+                                <th class="p-3">Category</th>
+                                <th class="p-3">Sub-Item / Coach</th>
+                                <th class="p-3">Total Amount</th>
+                                <th class="p-3">Gym Share</th>
+                                <th class="p-3">Coach Share</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashRecentTable" class="divide-y divide-magma-border"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ENTRY FORM TAB -->
+        <section id="view-entry" class="hidden max-w-2xl mx-auto">
+            <div class="bg-magma-card border border-magma-border rounded-xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold mb-6 text-center border-b border-magma-border pb-3">New Daily Financial Entry</h2>
+                
+                <form id="entryForm" onsubmit="saveEntry(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Transaction Type</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" onclick="setEntryType('Income')" id="typeBtnIncome" class="p-3 rounded-lg border border-magma-border bg-green-950/40 border-green-600 text-green-400 font-bold">Income</button>
+                            <button type="button" onclick="setEntryType('Expense')" id="typeBtnExpense" class="p-3 rounded-lg border border-magma-border bg-magma-dark text-gray-400">Expense</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Date</label>
+                            <input type="date" id="entryDate" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Category</label>
+                            <select id="entryCategory" onchange="handleCategoryChange()" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red" required></select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Sub-Item</label>
+                        <select id="entrySubItem" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red"></select>
+                    </div>
+
+                    <div id="coachSharingSection" class="hidden bg-magma-accent p-4 rounded-lg border border-magma-border space-y-3">
+                        <span class="text-xs font-bold text-magma-orange uppercase tracking-wider">Coach Revenue Share Split</span>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Assigned Coach</label>
+                                <select id="entryCoach" onchange="calculateShares()" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white"></select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Coach Share %</label>
+                                <input type="number" id="entryCoachPercent" min="0" max="100" oninput="calculateShares()" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" value="50">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-magma-border">
+                            <div>Gym Split: <span id="calcGymShare" class="font-bold text-green-400">0 IQD</span></div>
+                            <div>Coach Split: <span id="calcCoachShare" class="font-bold text-magma-orange">0 IQD</span></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Amount (IQD)</label>
+                        <input type="number" id="entryAmount" min="0" step="250" oninput="calculateShares()" placeholder="e.g. 50000" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white font-mono text-lg focus:outline-none focus:border-magma-red" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Notes / Description (Optional)</label>
+                        <input type="text" id="entryNotes" placeholder="Add additional details..." class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red">
+                    </div>
+
+                    <button type="submit" class="w-full bg-magma-red hover:bg-red-600 font-bold py-3.5 rounded-lg transition duration-200">Save Entry</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- REPORTS TAB -->
+        <section id="view-reports" class="hidden space-y-6">
+            <div class="bg-magma-card border border-magma-border rounded-xl p-5 no-print">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Start Date</label>
+                        <input type="date" id="filterStartDate" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">End Date</label>
+                        <input type="date" id="filterEndDate" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Filter Type</label>
+                        <select id="filterType" onchange="applyFilters()" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2 text-white">
+                            <option value="All">All Transactions</option>
+                            <option value="Income">Income Only</option>
+                            <option value="Expense">Expense Only</option>
+                            <option value="CoachShare">Coach Share Reports</option>
+                        </select>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="applyFilters()" class="flex-1 bg-magma-accent border border-magma-border hover:bg-gray-700 py-2 rounded-lg font-medium text-sm">Filter</button>
+                        <button onclick="exportExcel()" class="bg-green-700 hover:bg-green-600 px-3 py-2 rounded-lg text-sm"><i class="fa-solid fa-file-excel"></i></button>
+                        <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-600 px-3 py-2 rounded-lg text-sm"><i class="fa-solid fa-print"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reportPrintHeader" class="bg-magma-card border border-magma-border rounded-xl p-5 print-card">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold">Financial Statement</h2>
+                        <p class="text-xs text-gray-400" id="reportDateRangeText">Showing all recorded history</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400">Net Period Outcome</span>
+                        <div class="text-xl font-bold" id="reportNetTotal">0 IQD</div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-magma-accent text-gray-400">
+                            <tr>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Type</th>
+                                <th class="p-3">Category</th>
+                                <th class="p-3">Sub-Item / Coach</th>
+                                <th class="p-3">Gross Total</th>
+                                <th class="p-3">Gym Share</th>
+                                <th class="p-3">Coach Share</th>
+                                <th class="p-3">Notes</th>
+                                <th class="p-3 no-print">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody" class="divide-y divide-magma-border"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS TAB -->
+        <section id="view-settings" class="hidden space-y-6">
+
+            <!-- USER & PERMISSIONS MANAGEMENT -->
+            <div class="bg-magma-card border border-magma-border rounded-xl p-5 space-y-4">
+                <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear text-magma-red"></i> User Credentials & Permissions Manager
+                </h3>
+                
+                <form onsubmit="addUser(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Username</label>
+                        <input type="text" id="newUsername" placeholder="e.g. john" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Password</label>
+                        <input type="password" id="newPassword" placeholder="New Password" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Role Permission</label>
+                        <select id="newUserRole" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white">
+                            <option value="Admin">Admin (Full Access)</option>
+                            <option value="User">User / Reception (Restricted)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-magma-red hover:bg-red-600 font-bold py-2.5 px-4 rounded-lg text-sm">Add / Update User</button>
+                </form>
+
+                <div class="mt-4">
+                    <h4 class="text-xs font-semibold text-gray-400 mb-2">Registered Accounts</h4>
+                    <div id="usersList" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-magma-card border border-magma-border rounded-xl p-5 space-y-4">
+                    <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-2">Sub-Items Manager</h3>
+                    <form onsubmit="addSubItem(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Select Parent Category</label>
+                            <select id="settingParentCategory" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">New Sub-Item Name</label>
+                            <input type="text" id="settingSubItemName" placeholder="e.g. Protein Bars / Monthly Pass" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" required>
+                        </div>
+                        <button type="submit" class="w-full bg-magma-red hover:bg-red-600 font-bold py-2 rounded-lg text-sm">Add Sub-Item</button>
+                    </form>
+
+                    <div class="mt-4">
+                        <h4 class="text-xs font-semibold text-gray-400 mb-2">Existing Sub-items</h4>
+                        <div id="subItemsList" class="max-h-48 overflow-y-auto space-y-1 text-sm"></div>
+                    </div>
+                </div>
+
+                <div class="bg-magma-card border border-magma-border rounded-xl p-5 space-y-4">
+                    <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-2">Coaches & Default Splits</h3>
+                    <form onsubmit="addCoach(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Coach Name</label>
+                            <input type="text" id="settingCoachName" placeholder="e.g. Coach Ahmed" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Default Revenue Share (%)</label>
+                            <input type="number" id="settingCoachPercent" min="0" max="100" value="50" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" required>
+                        </div>
+                        <button type="submit" class="w-full bg-magma-red hover:bg-red-600 font-bold py-2 rounded-lg text-sm">Add Coach</button>
+                    </form>
+
+                    <div class="mt-4">
+                        <h4 class="text-xs font-semibold text-gray-400 mb-2">Registered Coaches</h4>
+                        <div id="coachesList" class="max-h-48 overflow-y-auto space-y-1 text-sm"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-magma-card border border-magma-border rounded-xl p-5">
+                <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-3 mb-4">Database & Direct Custom Folder Storage</h3>
+                
+                <div class="mb-6 bg-magma-accent p-4 rounded-lg border border-magma-border">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <span class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-folder-open text-magma-orange"></i> Custom Folder Backup Link
+                            </span>
+                            <p class="text-xs text-gray-400 mt-1" id="fileStatusText">No custom folder file linked. Data saving in browser memory only.</p>
+                        </div>
+                        <button onclick="setCustomFolderFile()" class="bg-magma-orange hover:bg-orange-600 text-black font-bold px-4 py-2 rounded-lg text-xs transition duration-200">
+                            Choose Target Folder/File
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="exportDatabase()" class="bg-magma-accent border border-magma-border hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-download mr-2"></i>Export Manual Backup</button>
+                    <label class="bg-magma-accent border border-magma-border hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer">
+                        <i class="fa-solid fa-upload mr-2"></i>Import JSON File
+                        <input type="file" id="importFile" accept=".json" onchange="importDatabase(event)" class="hidden">
+                    </label>
+                    <button onclick="resetSystemData()" class="bg-red-950/60 border border-red-800 text-red-400 hover:bg-red-900 px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-trash mr-2"></i>Reset System Data</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-magma-card border-t border-magma-border py-4 text-center text-xs text-gray-500 no-print">
+        Magma Gym Finance System &copy; 2026. Built with full automation and revenue tracking.
+    </footer>
+
+    <script>
+        const INITIAL_CATEGORIES = {
+            Income: [
+                "Gym Membership & Daily Membership",
+                "Café",
+                "Gym Course Plans",
+                "VIP Locker",
+                "Personal Trainer",
+                "CrossFit",
+                "Boxing",
+                "MMA",
+                "Kickboxing",
+                "Cosmetics, Accessories & Clothes"
+            ],
+            Expense: [
+                "Coach Salary",
+                "Cleaner Salary",
+                "Café Salary",
+                "Reception Salary",
+                "Administration Salary",
+                "Rent",
+                "Services",
+                "Electricity",
+                "Cleaning Materials",
+                "Marketing"
+            ]
+        };
+
+        const REVENUE_SHARE_CATEGORIES = ["CrossFit", "Boxing", "MMA", "Kickboxing", "Personal Trainer"];
+
+        let fileHandle = null;
+
+        let appState = {
+            currentUser: null,
+            users: JSON.parse(localStorage.getItem('magma_users')) || [
+                { username: "admin", password: "1234", role: "Admin" },
+                { username: "reception", password: "1234", role: "User" }
+            ],
+            subItems: JSON.parse(localStorage.getItem('magma_subitems')) || {
+                "Café": ["Espresso", "Protein Shake", "Water", "Energy Drink"],
+                "Cosmetics, Accessories & Clothes": ["Gym T-Shirt", "Lifting Straps", "Shaker"],
+                "Services": ["Internet", "Water Supply", "Software Subscriptions"]
+            },
+            coaches: JSON.parse(localStorage.getItem('magma_coaches')) || [
+                { id: "1", name: "Coach Ali", percent: 50 },
+                { id: "2", name: "Coach Ahmed", percent: 40 }
+            ],
+            entries: JSON.parse(localStorage.getItem('magma_entries')) || [],
+            currentEntryType: 'Income'
+        };
+
+        let incomeChartInstance = null;
+        let expenseChartInstance = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('entryDate').valueAsDate = new Date();
+            renderCategoryOptions();
+            renderSubItemsList();
+            renderCoachesList();
+            renderUsersList();
+            renderDashboard();
+        });
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const userVal = document.getElementById('loginUsername').value.trim().toLowerCase();
+            const passVal = document.getElementById('loginPassword').value;
+
+            const foundUser = appState.users.find(u => u.username.toLowerCase() === userVal && u.password === passVal);
+
+            if (foundUser) {
+                appState.currentUser = foundUser;
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('userBadge').innerText = `${foundUser.username} (${foundUser.role})`;
+                
+                // Clear inputs for security
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginUsername').value = '';
+
+                if (foundUser.role !== 'Admin') {
+                    document.getElementById('adminSettingsBtn').classList.add('hidden');
+                } else {
+                    document.getElementById('adminSettingsBtn').classList.remove('hidden');
+                }
+                switchTab('dashboard');
+            } else {
+                alert("Invalid username or password!");
+            }
+        }
+
+        function logout() {
+            appState.currentUser = null;
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('authContainer').classList.remove('hidden');
+        }
+
+        function switchTab(tabId) {
+            ['dashboard', 'entry', 'reports', 'settings'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) btn.classList.remove('bg-magma-accent', 'text-magma-red');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) activeBtn.classList.add('bg-magma-accent', 'text-magma-red');
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'reports') applyFilters();
+        }
+
+        /* --- USER MANAGEMENT FUNCTIONS --- */
+        function addUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newUserRole').value;
+
+            const existingIndex = appState.users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
+
+            if (existingIndex > -1) {
+                appState.users[existingIndex].password = password;
+                appState.users[existingIndex].role = role;
+                alert(`User '${username}' updated successfully!`);
+            } else {
+                appState.users.push({ username, password, role });
+                alert(`User '${username}' created successfully!`);
+            }
+
+            saveDataLocally();
+            renderUsersList();
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+        }
+
+        function renderUsersList() {
+            const list = document.getElementById('usersList');
+            list.innerHTML = appState.users.map(u => `
+                <div class="flex justify-between items-center bg-magma-dark p-3 rounded-lg border border-magma-border">
+                    <div>
+                        <span class="font-bold text-white">${u.username}</span>
+                        <span class="ml-2 text-xs px-2 py-0.5 rounded ${u.role === 'Admin' ? 'bg-magma-red/20 text-magma-red' : 'bg-blue-950 text-blue-400'}">${u.role}</span>
+                        <span class="text-xs text-gray-500 block mt-0.5">Password: ••••••••</span>
+                    </div>
+                    ${appState.users.length > 1 ? `
+                        <button onclick="removeUser('${u.username}')" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 bg-red-950/40 rounded border border-red-900"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function removeUser(username) {
+            if (confirm(`Delete user '${username}'?`)) {
+                appState.users = appState.users.filter(u => u.username.toLowerCase() !== username.toLowerCase());
+                saveDataLocally();
+                renderUsersList();
+            }
+        }
+
+        /* --- CATEGORIES & ENTRIES FUNCTIONS --- */
+        function setEntryType(type) {
+            appState.currentEntryType = type;
+            const btnInc = document.getElementById('typeBtnIncome');
+            const btnExp = document.getElementById('typeBtnExpense');
+
+            if (type === 'Income') {
+                btnInc.className = "p-3 rounded-lg border border-magma-border bg-green-950/40 border-green-600 text-green-400 font-bold";
+                btnExp.className = "p-3 rounded-lg border border-magma-border bg-magma-dark text-gray-400";
+            } else {
+                btnExp.className = "p-3 rounded-lg border border-magma-border bg-red-950/40 border-magma-red text-magma-red font-bold";
+                btnInc.className = "p-3 rounded-lg border border-magma-border bg-magma-dark text-gray-400";
+            }
+            renderCategoryOptions();
+        }
+
+        function renderCategoryOptions() {
+            const catSelect = document.getElementById('entryCategory');
+            const categories = INITIAL_CATEGORIES[appState.currentEntryType];
+            
+            catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            const settingCatSelect = document.getElementById('settingParentCategory');
+            const allCats = [...INITIAL_CATEGORIES.Income, ...INITIAL_CATEGORIES.Expense];
+            settingCatSelect.innerHTML = allCats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            handleCategoryChange();
+        }
+
+        function handleCategoryChange() {
+            const category = document.getElementById('entryCategory').value;
+            const subSelect = document.getElementById('entrySubItem');
+            const coachSection = document.getElementById('coachSharingSection');
+
+            const subs = appState.subItems[category] || [];
+            if (subs.length > 0) {
+                subSelect.innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join('');
+                subSelect.disabled = false;
+            } else {
+                subSelect.innerHTML = `<option value="">General / None</option>`;
+            }
+
+            if (appState.currentEntryType === 'Income' && REVENUE_SHARE_CATEGORIES.includes(category)) {
+                coachSection.classList.remove('hidden');
+                populateCoachDropdown();
+            } else {
+                coachSection.classList.add('hidden');
+            }
+            calculateShares();
+        }
+
+        function populateCoachDropdown() {
+            const coachSelect = document.getElementById('entryCoach');
+            coachSelect.innerHTML = appState.coaches.map(c => `<option value="${c.name}" data-percent="${c.percent}">${c.name} (${c.percent}%)</option>`).join('');
+            
+            if (appState.coaches.length > 0) {
+                document.getElementById('entryCoachPercent').value = appState.coaches[0].percent;
+            }
+        }
+
+        function calculateShares() {
+            const category = document.getElementById('entryCategory').value;
+            const amount = parseFloat(document.getElementById('entryAmount').value) || 0;
+            
+            if (appState.currentEntryType === 'Income' && REVENUE_SHARE_CATEGORIES.includes(category)) {
+                const percentInput = document.getElementById('entryCoachPercent');
+                const coachSelect = document.getElementById('entryCoach');
+                
+                if (document.activeElement === coachSelect && coachSelect.selectedOptions[0]) {
+                    percentInput.value = coachSelect.selectedOptions[0].getAttribute('data-percent');
+                }
+
+                const coachPercent = parseFloat(percentInput.value) || 0;
+                const coachShare = (amount * coachPercent) / 100;
+                const gymShare = amount - coachShare;
+
+                document.getElementById('calcGymShare').innerText = gymShare.toLocaleString() + ' IQD';
+                document.getElementById('calcCoachShare').innerText = coachShare.toLocaleString() + ' IQD';
+            }
+        }
+
+        function saveEntry(e) {
+            e.preventDefault();
+            const category = document.getElementById('entryCategory').value;
+            const amount = parseFloat(document.getElementById('entryAmount').value) || 0;
+            const isRevenueShare = appState.currentEntryType === 'Income' && REVENUE_SHARE_CATEGORIES.includes(category);
+
+            let coachShare = 0;
+            let gymShare = amount;
+            let coachName = '';
+
+            if (isRevenueShare) {
+                const coachPercent = parseFloat(document.getElementById('entryCoachPercent').value) || 0;
+                coachName = document.getElementById('entryCoach').value;
+                coachShare = (amount * coachPercent) / 100;
+                gymShare = amount - coachShare;
+            }
+
+            const entry = {
+                id: Date.now().toString(),
+                date: document.getElementById('entryDate').value,
+                type: appState.currentEntryType,
+                category: category,
+                subItem: document.getElementById('entrySubItem').value || 'Standard',
+                amount: amount,
+                gymShare: gymShare,
+                coachShare: coachShare,
+                coachName: coachName,
+                notes: document.getElementById('entryNotes').value,
+                user: appState.currentUser ? appState.currentUser.username : 'System'
+            };
+
+            appState.entries.unshift(entry);
+            saveDataLocally();
+            
+            alert('Entry successfully recorded!');
+            document.getElementById('entryForm').reset();
+            document.getElementById('entryDate').valueAsDate = new Date();
+            setEntryType('Income');
+        }
+
+        function renderDashboard() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const incomeCatTotals = {};
+            const expenseCatTotals = {};
+
+            appState.entries.forEach(e => {
+                if (e.type === 'Income') {
+                    totalIncome += e.amount;
+                    incomeCatTotals[e.category] = (incomeCatTotals[e.category] || 0) + e.amount;
+                } else {
+                    totalExpense += e.amount;
+                    expenseCatTotals[e.category] = (expenseCatTotals[e.category] || 0) + e.amount;
+                }
+            });
+
+            document.getElementById('dashTotalIncome').innerText = totalIncome.toLocaleString() + ' IQD';
+            document.getElementById('dashTotalExpenses').innerText = totalExpense.toLocaleString() + ' IQD';
+            document.getElementById('dashNetProfit').innerText = (totalIncome - totalExpense).toLocaleString() + ' IQD';
+
+            const recent = appState.entries.slice(0, 5);
+            document.getElementById('dashRecentTable').innerHTML = recent.map(e => `
+                <tr>
+                    <td class="p-3">${e.date}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs ${e.type === 'Income' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}">${e.type}</span></td>
+                    <td class="p-3 font-medium">${e.category}</td>
+                    <td class="p-3 text-gray-400">${e.subItem} ${e.coachName ? `(${e.coachName})` : ''}</td>
+                    <td class="p-3 font-mono">${e.amount.toLocaleString()} IQD</td>
+                    <td class="p-3 font-mono text-green-400">${e.gymShare.toLocaleString()} IQD</td>
+                    <td class="p-3 font-mono text-magma-orange">${e.coachShare ? e.coachShare.toLocaleString() + ' IQD' : '-'}</td>
+                </tr>
+            `).join('');
+
+            renderCharts(incomeCatTotals, expenseCatTotals);
+        }
+
+        function renderCharts(incomeData, expenseData) {
+            if (incomeChartInstance) incomeChartInstance.destroy();
+            if (expenseChartInstance) expenseChartInstance.destroy();
+
+            const ctxIncome = document.getElementById('incomeChart').getContext('2d');
+            incomeChartInstance = new Chart(ctxIncome, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(incomeData),
+                    datasets: [{
+                        data: Object.values(incomeData),
+                        backgroundColor: ['#34C759', '#30D158', '#FF9500', '#007AFF', '#5856D6', '#AF52DE', '#FF2D55']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#ccc' } } } }
+            });
+
+            const ctxExpense = document.getElementById('expenseChart').getContext('2d');
+            expenseChartInstance = new Chart(ctxExpense, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(expenseData),
+                    datasets: [{
+                        data: Object.values(expenseData),
+                        backgroundColor: ['#FF3B30', '#FF453A', '#FF9500', '#FFCC00', '#64D2FF', '#0D6EFD']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#ccc' } } } }
+            });
+        }
+
+        function applyFilters() {
+            const start = document.getElementById('filterStartDate').value;
+            const end = document.getElementById('filterEndDate').value;
+            const filterType = document.getElementById('filterType').value;
+
+            let filtered = appState.entries;
+
+            if (start) filtered = filtered.filter(e => e.date >= start);
+            if (end) filtered = filtered.filter(e => e.date <= end);
+            if (filterType === 'Income') filtered = filtered.filter(e => e.type === 'Income');
+            if (filterType === 'Expense') filtered = filtered.filter(e => e.type === 'Expense');
+            if (filterType === 'CoachShare') filtered = filtered.filter(e => e.coachShare > 0);
+
+            let netTotal = 0;
+            const tbody = document.getElementById('reportTableBody');
+            
+            tbody.innerHTML = filtered.map(e => {
+                if(e.type === 'Income') netTotal += e.gymShare;
+                else netTotal -= e.amount;
+
+                return `
+                    <tr>
+                        <td class="p-3">${e.date}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-xs ${e.type === 'Income' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}">${e.type}</span></td>
+                        <td class="p-3 font-medium">${e.category}</td>
+                        <td class="p-3 text-gray-400">${e.subItem} ${e.coachName ? `(${e.coachName})` : ''}</td>
+                        <td class="p-3 font-mono">${e.amount.toLocaleString()} IQD</td>
+                        <td class="p-3 font-mono text-green-400">${e.gymShare.toLocaleString()} IQD</td>
+                        <td class="p-3 font-mono text-magma-orange">${e.coachShare ? e.coachShare.toLocaleString() + ' IQD' : '-'}</td>
+                        <td class="p-3 text-gray-400 text-xs">${e.notes || ''}</td>
+                        <td class="p-3 no-print">
+                            ${appState.currentUser && appState.currentUser.role === 'Admin' ? `<button onclick="deleteEntry('${e.id}')" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('reportNetTotal').innerText = netTotal.toLocaleString() + ' IQD';
+            document.getElementById('reportDateRangeText').innerText = `Filtered Results: ${filtered.length} entries found`;
+        }
+
+        function deleteEntry(id) {
+            if (confirm('Are you sure you want to delete this financial record?')) {
+                appState.entries = appState.entries.filter(e => e.id !== id);
+                saveDataLocally();
+                applyFilters();
+            }
+        }
+
+        function addSubItem(e) {
+            e.preventDefault();
+            const parent = document.getElementById('settingParentCategory').value;
+            const name = document.getElementById('settingSubItemName').value.trim();
+
+            if (!appState.subItems[parent]) appState.subItems[parent] = [];
+            if (!appState.subItems[parent].includes(name)) {
+                appState.subItems[parent].push(name);
+                saveDataLocally();
+                renderSubItemsList();
+                document.getElementById('settingSubItemName').value = '';
+            }
+        }
+
+        function renderSubItemsList() {
+            const list = document.getElementById('subItemsList');
+            let html = '';
+            for (let cat in appState.subItems) {
+                appState.subItems[cat].forEach(sub => {
+                    html += `<div class="flex justify-between items-center bg-magma-dark p-2 rounded border border-magma-border">
+                        <span><span class="text-gray-400 text-xs">${cat}:</span> ${sub}</span>
+                        <button onclick="removeSubItem('${cat}', '${sub}')" class="text-xs text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                    </div>`;
+                });
+            }
+            list.innerHTML = html || `<span class="text-xs text-gray-500">No sub-items added yet.</span>`;
+        }
+
+        function removeSubItem(parent, name) {
+            appState.subItems[parent] = appState.subItems[parent].filter(s => s !== name);
+            saveDataLocally();
+            renderSubItemsList();
+        }
+
+        function addCoach(e) {
+            e.preventDefault();
+            const name = document.getElementById('settingCoachName').value.trim();
+            const percent = parseFloat(document.getElementById('settingCoachPercent').value) || 0;
+
+            appState.coaches.push({ id: Date.now().toString(), name, percent });
+            saveDataLocally();
+            renderCoachesList();
+            document.getElementById('settingCoachName').value = '';
+        }
+
+        function renderCoachesList() {
+            const list = document.getElementById('coachesList');
+            list.innerHTML = appState.coaches.map(c => `
+                <div class="flex justify-between items-center bg-magma-dark p-2 rounded border border-magma-border">
+                    <span>${c.name} <span class="text-magma-orange text-xs">(${c.percent}%)</span></span>
+                    <button onclick="removeCoach('${c.id}')" class="text-xs text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                </div>
+            `).join('') || `<span class="text-xs text-gray-500">No coaches configured.</span>`;
+        }
+
+        function removeCoach(id) {
+            appState.coaches = appState.coaches.filter(c => c.id !== id);
+            saveDataLocally();
+            renderCoachesList();
+        }
+
+        /* --- FOLDER SAVE & EXPORT FUNCTIONS --- */
+        async function setCustomFolderFile() {
+            if ('showSaveFilePicker' in window) {
+                try {
+                    fileHandle = await window.showSaveFilePicker({
+                        suggestedName: 'MagmaGym_Database.json',
+                        types: [{
+                            description: 'JSON Database File',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    });
+                    document.getElementById('fileStatusText').innerText = `Linked file: ${fileHandle.name} (Direct Auto-Sync Active)`;
+                    document.getElementById('fileStatusText').className = "text-xs text-green-400 mt-1 font-semibold";
+                    saveDataLocally();
+                } catch (err) {
+                    console.log('Folder selection cancelled.');
+                }
+            } else {
+                alert('Direct local folder saving is supported in Google Chrome, Microsoft Edge, and Opera browsers.');
+            }
+        }
+
+        function exportExcel() {
+            const worksheet = XLSX.utils.json_to_sheet(appState.entries);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Financial Data");
+            XLSX.writeFile(workbook, "MagmaGym_Financial_Report.xlsx");
+        }
+
+        function exportDatabase() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `MagmaGym_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.click();
+        }
+
+        function importDatabase(event) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const importedData = JSON.parse(e.target.result);
+                if (importedData.entries) {
+                    appState = importedData;
+                    saveDataLocally();
+                    location.reload();
+                }
+            };
+            reader.readAsText(event.target.files[0]);
+        }
+
+        function resetSystemData() {
+            if (confirm('WARNING: This action will erase all entries, users, settings, and database! Continue?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        async function saveDataLocally() {
+            localStorage.setItem('magma_entries', JSON.stringify(appState.entries));
+            localStorage.setItem('magma_users', JSON.stringify(appState.users));
+            localStorage.setItem('magma_subitems', JSON.stringify(appState.subItems));
+            localStorage.setItem('magma_coaches', JSON.stringify(appState.coaches));
+
+            // Direct custom file sync
+            if (fileHandle) {
+                try {
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(JSON.stringify(appState, null, 2));
+                    await writable.close();
+                } catch (err) {
+                    console.error("Failed writing to custom file:", err);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
