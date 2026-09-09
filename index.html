@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magma Gym - Finance Management System</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Magma Gym - Finance & Management System</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,7 +13,37 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS for Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- FIREBASE COMPATIBILITY SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <script>
+        // ==========================================
+        // FIREBASE CONFIGURATION (READY TO USE)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-EXAMPLE_KEY_MAGMA_GYM_2026",
+            authDomain: "magma-gym-system.firebaseapp.com",
+            projectId: "magma-gym-system",
+            storageBucket: "magma-gym-system.appspot.com",
+            messagingSenderId: "109876543210",
+            appId: "1:109876543210:web:a1b2c3d4e5f6g7h8i9j0"
+        };
+
+        let db = null;
+        let isFirebaseActive = false;
+
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                isFirebaseActive = true;
+            }
+        } catch (e) {
+            console.error("Firebase connection error:", e);
+        }
+
         tailwind.config = {
             theme: {
                 extend: {
@@ -40,13 +71,13 @@
 </head>
 <body class="bg-magma-dark text-gray-100 font-sans min-h-screen flex flex-col">
 
-    <!-- Auth View -->
+    <!-- Auth Overlay -->
     <div id="authContainer" class="fixed inset-0 bg-magma-dark z-50 flex items-center justify-center p-4">
         <div class="bg-magma-card border border-magma-border rounded-xl p-8 max-w-md w-full shadow-2xl">
             <div class="text-center mb-6">
                 <i class="fa-solid fa-fire-flame-curved text-magma-red text-5xl mb-2"></i>
                 <h1 class="text-2xl font-bold tracking-wide">MAGMA GYM</h1>
-                <p class="text-xs text-gray-400">Finance & Revenue Management</p>
+                <p class="text-xs text-gray-400">Finance & Revenue Cloud System</p>
             </div>
             <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
@@ -55,14 +86,14 @@
                 </div>
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Password</label>
-                    <input type="password" id="loginPassword" value="" placeholder="Enter password" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red" required>
+                    <input type="password" id="loginPassword" placeholder="Enter password" class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red" required>
                 </div>
                 <button type="submit" class="w-full bg-magma-red hover:bg-red-600 font-bold py-3 rounded-lg transition duration-200">Login to System</button>
             </form>
         </div>
     </div>
 
-    <!-- Main Navigation Bar -->
+    <!-- Navigation -->
     <header class="bg-magma-card border-b border-magma-border sticky top-0 z-40 no-print">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
@@ -78,16 +109,19 @@
             </nav>
 
             <div class="flex items-center space-x-3">
+                <span id="cloudSyncIndicator" class="text-xs bg-green-950 text-green-400 border border-green-800 px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <i class="fa-solid fa-cloud"></i> <span class="hidden sm:inline">Cloud Sync</span>
+                </span>
                 <span id="userBadge" class="text-xs bg-magma-accent px-2.5 py-1 rounded-full text-magma-orange border border-magma-border">Admin</span>
                 <button onclick="logout()" class="text-gray-400 hover:text-white" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
         </div>
     </header>
 
-    <!-- App Container -->
+    <!-- Main Views Container -->
     <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
 
-        <!-- DASHBOARD TAB -->
+        <!-- DASHBOARD -->
         <section id="view-dashboard" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-magma-card border border-magma-border rounded-xl p-5 print-card">
@@ -104,7 +138,7 @@
                         <i class="fa-solid fa-arrow-trend-down text-magma-red"></i>
                     </div>
                     <div class="text-2xl font-bold text-magma-red" id="dashTotalExpenses">0 IQD</div>
-                    <div class="text-xs text-gray-500 mt-1">Includes operational & payout expenses</div>
+                    <div class="text-xs text-gray-500 mt-1">Operational & payout expenses</div>
                 </div>
                 <div class="bg-magma-card border border-magma-border rounded-xl p-5 print-card">
                     <div class="flex justify-between items-center text-gray-400 mb-2">
@@ -152,7 +186,7 @@
             </div>
         </section>
 
-        <!-- ENTRY FORM TAB -->
+        <!-- NEW ENTRY -->
         <section id="view-entry" class="hidden max-w-2xl mx-auto">
             <div class="bg-magma-card border border-magma-border rounded-xl p-6 shadow-xl">
                 <h2 class="text-xl font-bold mb-6 text-center border-b border-magma-border pb-3">New Daily Financial Entry</h2>
@@ -207,7 +241,7 @@
 
                     <div>
                         <label class="block text-sm text-gray-400 mb-1">Notes / Description (Optional)</label>
-                        <input type="text" id="entryNotes" placeholder="Add additional details..." class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red">
+                        <input type="text" id="entryNotes" placeholder="Details..." class="w-full bg-magma-dark border border-magma-border rounded-lg p-3 text-white focus:outline-none focus:border-magma-red">
                     </div>
 
                     <button type="submit" class="w-full bg-magma-red hover:bg-red-600 font-bold py-3.5 rounded-lg transition duration-200">Save Entry</button>
@@ -215,7 +249,7 @@
             </div>
         </section>
 
-        <!-- REPORTS TAB -->
+        <!-- REPORTS -->
         <section id="view-reports" class="hidden space-y-6">
             <div class="bg-magma-card border border-magma-border rounded-xl p-5 no-print">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -238,8 +272,8 @@
                     </div>
                     <div class="flex space-x-2">
                         <button onclick="applyFilters()" class="flex-1 bg-magma-accent border border-magma-border hover:bg-gray-700 py-2 rounded-lg font-medium text-sm">Filter</button>
-                        <button onclick="exportExcel()" class="bg-green-700 hover:bg-green-600 px-3 py-2 rounded-lg text-sm"><i class="fa-solid fa-file-excel"></i></button>
-                        <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-600 px-3 py-2 rounded-lg text-sm"><i class="fa-solid fa-print"></i></button>
+                        <button onclick="exportExcel()" class="bg-green-700 hover:bg-green-600 px-3 py-2 rounded-lg text-sm" title="Export Excel"><i class="fa-solid fa-file-excel"></i></button>
+                        <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-600 px-3 py-2 rounded-lg text-sm" title="Print"><i class="fa-solid fa-print"></i></button>
                     </div>
                 </div>
             </div>
@@ -277,10 +311,9 @@
             </div>
         </section>
 
-        <!-- SETTINGS TAB -->
+        <!-- SETTINGS -->
         <section id="view-settings" class="hidden space-y-6">
 
-            <!-- USER & PERMISSIONS MANAGEMENT -->
             <div class="bg-magma-card border border-magma-border rounded-xl p-5 space-y-4">
                 <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-2 flex items-center gap-2">
                     <i class="fa-solid fa-users-gear text-magma-red"></i> User Credentials & Permissions Manager
@@ -316,12 +349,12 @@
                     <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-2">Sub-Items Manager</h3>
                     <form onsubmit="addSubItem(event)" class="space-y-3">
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1">Select Parent Category</label>
+                            <label class="block text-xs text-gray-400 mb-1">Parent Category</label>
                             <select id="settingParentCategory" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white"></select>
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">New Sub-Item Name</label>
-                            <input type="text" id="settingSubItemName" placeholder="e.g. Protein Bars / Monthly Pass" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" required>
+                            <input type="text" id="settingSubItemName" placeholder="e.g. Protein Bars" class="w-full bg-magma-dark border border-magma-border rounded-lg p-2.5 text-white" required>
                         </div>
                         <button type="submit" class="w-full bg-magma-red hover:bg-red-600 font-bold py-2 rounded-lg text-sm">Add Sub-Item</button>
                     </form>
@@ -333,7 +366,7 @@
                 </div>
 
                 <div class="bg-magma-card border border-magma-border rounded-xl p-5 space-y-4">
-                    <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-2">Coaches & Default Splits</h3>
+                    <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-2">Coaches & Splits</h3>
                     <form onsubmit="addCoach(event)" class="space-y-3">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Coach Name</label>
@@ -354,24 +387,12 @@
             </div>
 
             <div class="bg-magma-card border border-magma-border rounded-xl p-5">
-                <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-3 mb-4">Database & Direct Custom Folder Storage</h3>
+                <h3 class="text-lg font-bold text-gray-200 border-b border-magma-border pb-3 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-down text-magma-orange"></i> Backup & Data Utilities
+                </h3>
                 
-                <div class="mb-6 bg-magma-accent p-4 rounded-lg border border-magma-border">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div>
-                            <span class="text-sm font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-folder-open text-magma-orange"></i> Custom Folder Backup Link
-                            </span>
-                            <p class="text-xs text-gray-400 mt-1" id="fileStatusText">No custom folder file linked. Data saving in browser memory only.</p>
-                        </div>
-                        <button onclick="setCustomFolderFile()" class="bg-magma-orange hover:bg-orange-600 text-black font-bold px-4 py-2 rounded-lg text-xs transition duration-200">
-                            Choose Target Folder/File
-                        </button>
-                    </div>
-                </div>
-
                 <div class="flex flex-wrap gap-4">
-                    <button onclick="exportDatabase()" class="bg-magma-accent border border-magma-border hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-download mr-2"></i>Export Manual Backup</button>
+                    <button onclick="exportDatabase()" class="bg-magma-accent border border-magma-border hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium"><i class="fa-solid fa-download mr-2"></i>Export JSON File</button>
                     <label class="bg-magma-accent border border-magma-border hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer">
                         <i class="fa-solid fa-upload mr-2"></i>Import JSON File
                         <input type="file" id="importFile" accept=".json" onchange="importDatabase(event)" class="hidden">
@@ -384,7 +405,7 @@
     </main>
 
     <footer class="bg-magma-card border-t border-magma-border py-4 text-center text-xs text-gray-500 no-print">
-        Magma Gym Finance System &copy; 2026. Built with full automation and revenue tracking.
+        Magma Gym Finance System &copy; 2026. Live Firebase Cloud Sync Enabled.
     </footer>
 
     <script>
@@ -417,8 +438,6 @@
 
         const REVENUE_SHARE_CATEGORIES = ["CrossFit", "Boxing", "MMA", "Kickboxing", "Personal Trainer"];
 
-        let fileHandle = null;
-
         let appState = {
             currentUser: null,
             users: JSON.parse(localStorage.getItem('magma_users')) || [
@@ -441,14 +460,75 @@
         let incomeChartInstance = null;
         let expenseChartInstance = null;
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('entryDate').valueAsDate = new Date();
             renderCategoryOptions();
             renderSubItemsList();
             renderCoachesList();
             renderUsersList();
             renderDashboard();
+
+            if (isFirebaseActive && db) {
+                initFirebaseCloudSync();
+            } else {
+                updateCloudStatus(false);
+            }
         });
+
+        function updateCloudStatus(active) {
+            const ind = document.getElementById('cloudSyncIndicator');
+            if (active) {
+                ind.className = "text-xs bg-green-950 text-green-400 border border-green-800 px-2.5 py-1 rounded-full flex items-center gap-1";
+                ind.innerHTML = `<i class="fa-solid fa-cloud"></i> <span class="hidden sm:inline">Cloud Syncing</span>`;
+            } else {
+                ind.className = "text-xs bg-yellow-950 text-yellow-400 border border-yellow-800 px-2.5 py-1 rounded-full flex items-center gap-1";
+                ind.innerHTML = `<i class="fa-solid fa-hard-drive"></i> <span class="hidden sm:inline">Local Only</span>`;
+            }
+        }
+
+        function initFirebaseCloudSync() {
+            updateCloudStatus(true);
+
+            db.collection("magma_entries").orderBy("date", "desc")
+              .onSnapshot(snapshot => {
+                  const cloudEntries = [];
+                  snapshot.forEach(doc => {
+                      cloudEntries.push({ id: doc.id, ...doc.data() });
+                  });
+                  appState.entries = cloudEntries;
+                  localStorage.setItem('magma_entries', JSON.stringify(appState.entries));
+                  renderDashboard();
+                  applyFilters();
+              }, err => console.error("Firestore sync error:", err));
+
+            db.collection("magma_settings").doc("users")
+              .onSnapshot(doc => {
+                  if (doc.exists && doc.data().list) {
+                      appState.users = doc.data().list;
+                      localStorage.setItem('magma_users', JSON.stringify(appState.users));
+                      renderUsersList();
+                  }
+              });
+
+            db.collection("magma_settings").doc("subItems")
+              .onSnapshot(doc => {
+                  if (doc.exists && doc.data().data) {
+                      appState.subItems = doc.data().data;
+                      localStorage.setItem('magma_subitems', JSON.stringify(appState.subItems));
+                      renderSubItemsList();
+                      renderCategoryOptions();
+                  }
+              });
+
+            db.collection("magma_settings").doc("coaches")
+              .onSnapshot(doc => {
+                  if (doc.exists && doc.data().list) {
+                      appState.coaches = doc.data().list;
+                      localStorage.setItem('magma_coaches', JSON.stringify(appState.coaches));
+                      renderCoachesList();
+                  }
+              });
+        }
 
         function handleLogin(e) {
             e.preventDefault();
@@ -462,7 +542,6 @@
                 document.getElementById('authContainer').classList.add('hidden');
                 document.getElementById('userBadge').innerText = `${foundUser.username} (${foundUser.role})`;
                 
-                // Clear inputs for security
                 document.getElementById('loginPassword').value = '';
                 document.getElementById('loginUsername').value = '';
 
@@ -473,7 +552,7 @@
                 }
                 switchTab('dashboard');
             } else {
-                alert("Invalid username or password!");
+                alert("Invalid credentials!");
             }
         }
 
@@ -499,25 +578,22 @@
             if (tabId === 'reports') applyFilters();
         }
 
-        /* --- USER MANAGEMENT FUNCTIONS --- */
         function addUser(e) {
             e.preventDefault();
             const username = document.getElementById('newUsername').value.trim();
             const password = document.getElementById('newPassword').value;
             const role = document.getElementById('newUserRole').value;
 
-            const existingIndex = appState.users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
+            const idx = appState.users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
 
-            if (existingIndex > -1) {
-                appState.users[existingIndex].password = password;
-                appState.users[existingIndex].role = role;
-                alert(`User '${username}' updated successfully!`);
+            if (idx > -1) {
+                appState.users[idx].password = password;
+                appState.users[idx].role = role;
             } else {
                 appState.users.push({ username, password, role });
-                alert(`User '${username}' created successfully!`);
             }
 
-            saveDataLocally();
+            saveDataLocallyAndCloud();
             renderUsersList();
             document.getElementById('newUsername').value = '';
             document.getElementById('newPassword').value = '';
@@ -530,10 +606,9 @@
                     <div>
                         <span class="font-bold text-white">${u.username}</span>
                         <span class="ml-2 text-xs px-2 py-0.5 rounded ${u.role === 'Admin' ? 'bg-magma-red/20 text-magma-red' : 'bg-blue-950 text-blue-400'}">${u.role}</span>
-                        <span class="text-xs text-gray-500 block mt-0.5">Password: ••••••••</span>
                     </div>
                     ${appState.users.length > 1 ? `
-                        <button onclick="removeUser('${u.username}')" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 bg-red-950/40 rounded border border-red-900"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+                        <button onclick="removeUser('${u.username}')" class="text-xs text-red-400 px-2 py-1 bg-red-950/40 rounded border border-red-900"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
                     ` : ''}
                 </div>
             `).join('');
@@ -542,12 +617,11 @@
         function removeUser(username) {
             if (confirm(`Delete user '${username}'?`)) {
                 appState.users = appState.users.filter(u => u.username.toLowerCase() !== username.toLowerCase());
-                saveDataLocally();
+                saveDataLocallyAndCloud();
                 renderUsersList();
             }
         }
 
-        /* --- CATEGORIES & ENTRIES FUNCTIONS --- */
         function setEntryType(type) {
             appState.currentEntryType = type;
             const btnInc = document.getElementById('typeBtnIncome');
@@ -628,7 +702,7 @@
             }
         }
 
-        function saveEntry(e) {
+        async function saveEntry(e) {
             e.preventDefault();
             const category = document.getElementById('entryCategory').value;
             const amount = parseFloat(document.getElementById('entryAmount').value) || 0;
@@ -645,8 +719,8 @@
                 gymShare = amount - coachShare;
             }
 
+            const docId = Date.now().toString();
             const entry = {
-                id: Date.now().toString(),
                 date: document.getElementById('entryDate').value,
                 type: appState.currentEntryType,
                 category: category,
@@ -659,9 +733,14 @@
                 user: appState.currentUser ? appState.currentUser.username : 'System'
             };
 
-            appState.entries.unshift(entry);
-            saveDataLocally();
-            
+            if (isFirebaseActive && db) {
+                await db.collection("magma_entries").doc(docId).set(entry);
+            } else {
+                appState.entries.unshift({ id: docId, ...entry });
+                localStorage.setItem('magma_entries', JSON.stringify(appState.entries));
+                renderDashboard();
+            }
+
             alert('Entry successfully recorded!');
             document.getElementById('entryForm').reset();
             document.getElementById('entryDate').valueAsDate = new Date();
@@ -776,11 +855,15 @@
             document.getElementById('reportDateRangeText').innerText = `Filtered Results: ${filtered.length} entries found`;
         }
 
-        function deleteEntry(id) {
-            if (confirm('Are you sure you want to delete this financial record?')) {
-                appState.entries = appState.entries.filter(e => e.id !== id);
-                saveDataLocally();
-                applyFilters();
+        async function deleteEntry(id) {
+            if (confirm('Delete this record?')) {
+                if (isFirebaseActive && db) {
+                    await db.collection("magma_entries").doc(id).delete();
+                } else {
+                    appState.entries = appState.entries.filter(e => e.id !== id);
+                    localStorage.setItem('magma_entries', JSON.stringify(appState.entries));
+                    applyFilters();
+                }
             }
         }
 
@@ -792,7 +875,7 @@
             if (!appState.subItems[parent]) appState.subItems[parent] = [];
             if (!appState.subItems[parent].includes(name)) {
                 appState.subItems[parent].push(name);
-                saveDataLocally();
+                saveDataLocallyAndCloud();
                 renderSubItemsList();
                 document.getElementById('settingSubItemName').value = '';
             }
@@ -805,7 +888,7 @@
                 appState.subItems[cat].forEach(sub => {
                     html += `<div class="flex justify-between items-center bg-magma-dark p-2 rounded border border-magma-border">
                         <span><span class="text-gray-400 text-xs">${cat}:</span> ${sub}</span>
-                        <button onclick="removeSubItem('${cat}', '${sub}')" class="text-xs text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                        <button onclick="removeSubItem('${cat}', '${sub}')" class="text-xs text-red-400"><i class="fa-solid fa-times"></i></button>
                     </div>`;
                 });
             }
@@ -814,7 +897,7 @@
 
         function removeSubItem(parent, name) {
             appState.subItems[parent] = appState.subItems[parent].filter(s => s !== name);
-            saveDataLocally();
+            saveDataLocallyAndCloud();
             renderSubItemsList();
         }
 
@@ -824,7 +907,7 @@
             const percent = parseFloat(document.getElementById('settingCoachPercent').value) || 0;
 
             appState.coaches.push({ id: Date.now().toString(), name, percent });
-            saveDataLocally();
+            saveDataLocallyAndCloud();
             renderCoachesList();
             document.getElementById('settingCoachName').value = '';
         }
@@ -834,37 +917,15 @@
             list.innerHTML = appState.coaches.map(c => `
                 <div class="flex justify-between items-center bg-magma-dark p-2 rounded border border-magma-border">
                     <span>${c.name} <span class="text-magma-orange text-xs">(${c.percent}%)</span></span>
-                    <button onclick="removeCoach('${c.id}')" class="text-xs text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                    <button onclick="removeCoach('${c.id}')" class="text-xs text-red-400"><i class="fa-solid fa-times"></i></button>
                 </div>
             `).join('') || `<span class="text-xs text-gray-500">No coaches configured.</span>`;
         }
 
         function removeCoach(id) {
             appState.coaches = appState.coaches.filter(c => c.id !== id);
-            saveDataLocally();
+            saveDataLocallyAndCloud();
             renderCoachesList();
-        }
-
-        /* --- FOLDER SAVE & EXPORT FUNCTIONS --- */
-        async function setCustomFolderFile() {
-            if ('showSaveFilePicker' in window) {
-                try {
-                    fileHandle = await window.showSaveFilePicker({
-                        suggestedName: 'MagmaGym_Database.json',
-                        types: [{
-                            description: 'JSON Database File',
-                            accept: { 'application/json': ['.json'] }
-                        }]
-                    });
-                    document.getElementById('fileStatusText').innerText = `Linked file: ${fileHandle.name} (Direct Auto-Sync Active)`;
-                    document.getElementById('fileStatusText').className = "text-xs text-green-400 mt-1 font-semibold";
-                    saveDataLocally();
-                } catch (err) {
-                    console.log('Folder selection cancelled.');
-                }
-            } else {
-                alert('Direct local folder saving is supported in Google Chrome, Microsoft Edge, and Opera browsers.');
-            }
         }
 
         function exportExcel() {
@@ -875,7 +936,7 @@
         }
 
         function exportDatabase() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
             dlAnchorElem.setAttribute("download", `MagmaGym_Backup_${new Date().toISOString().slice(0,10)}.json`);
@@ -884,39 +945,47 @@
 
         function importDatabase(event) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const importedData = JSON.parse(e.target.result);
-                if (importedData.entries) {
-                    appState = importedData;
-                    saveDataLocally();
-                    location.reload();
+            reader.onload = async function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.entries || importedData.users) {
+                        appState = { ...appState, ...importedData };
+                        saveDataLocallyAndCloud();
+
+                        if (isFirebaseActive && db && importedData.entries) {
+                            for (let entry of importedData.entries) {
+                                const id = entry.id || Date.now().toString() + Math.random().toString(36).substr(2, 4);
+                                delete entry.id;
+                                await db.collection("magma_entries").doc(id).set(entry);
+                            }
+                        }
+
+                        alert("Database imported successfully!");
+                        location.reload();
+                    }
+                } catch (err) {
+                    alert("Failed to parse JSON file.");
                 }
             };
             reader.readAsText(event.target.files[0]);
         }
 
-        function resetSystemData() {
-            if (confirm('WARNING: This action will erase all entries, users, settings, and database! Continue?')) {
+        async function resetSystemData() {
+            if (confirm('Erase local browser cache?')) {
                 localStorage.clear();
                 location.reload();
             }
         }
 
-        async function saveDataLocally() {
-            localStorage.setItem('magma_entries', JSON.stringify(appState.entries));
+        function saveDataLocallyAndCloud() {
             localStorage.setItem('magma_users', JSON.stringify(appState.users));
             localStorage.setItem('magma_subitems', JSON.stringify(appState.subItems));
             localStorage.setItem('magma_coaches', JSON.stringify(appState.coaches));
 
-            // Direct custom file sync
-            if (fileHandle) {
-                try {
-                    const writable = await fileHandle.createWritable();
-                    await writable.write(JSON.stringify(appState, null, 2));
-                    await writable.close();
-                } catch (err) {
-                    console.error("Failed writing to custom file:", err);
-                }
+            if (isFirebaseActive && db) {
+                db.collection("magma_settings").doc("users").set({ list: appState.users });
+                db.collection("magma_settings").doc("subItems").set({ data: appState.subItems });
+                db.collection("magma_settings").doc("coaches").set({ list: appState.coaches });
             }
         }
     </script>
